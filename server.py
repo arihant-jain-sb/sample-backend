@@ -17,8 +17,10 @@ def hello():
   # Grab the name the frontend sends us, which is in the 
   # { 'name': 'your name' } JSON object we are sent in the
   # request
-  json = request.json
-  name = json['name']
+  data = request.get_json(silent=True)
+  if not data or 'name' not in data:
+    return jsonify({ 'error': 'Missing required field: name' }), 400
+  name = data['name']
 
   # Send back a JSON object that has a message object for the
   # frontend to then display.
