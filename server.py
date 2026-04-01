@@ -10,6 +10,54 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app, origins=['http://localhost:1234'])
 
+# In-memory storage for tasks
+# Each task: { 'id': int, 'description': str, 'completed': bool }
+tasks = []
+next_id = 1
+
+# Add a new task
+@app.route('/tasks', methods=['POST'])
+def add_task():
+    global next_id
+    data = request.json
+    if not data or 'description' not in data:
+        return jsonify({'error': 'Description is required'}), 400
+    task = {
+        'id': next_id,
+        'description': data['description'],
+        'completed': False
+    }
+    tasks.append(task)
+    next_id += 1
+    return jsonify(task), 201
+
+# Delete a task by ID
+@app.route('/tasks/<int:task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    global tasks
+    for i, task in enumerate(tasks):
+        if task['id'] == task_id:
+            tasks.pop(i)
+            return jsonify({'status': 'success'}), 200
+    return jsonify({'error': 'Task not found'}), 404
+
+# Mark a task as complete/incomplete
+@app.route('/tasks/<int:task_id>', methods=['PATCH'])
+def update_task(task_id):
+    data = request.json
+    if not data or 'completed' not in data:
+        return jsonify({'error': 'Completed status is required'}), 400
+    for task in tasks:
+        if task['id'] == task_id:
+            task['completed'] = bool(data['completed'])
+            return jsonify(task), 200
+    return jsonify({'error': 'Task not found'}), 404
+
+# (Optional) List all tasks for debugging
+@app.route('/tasks', methods=['GET'])
+def list_tasks():
+    return jsonify(tasks)
+
 # This function will be triggered when the server receives a
 # POST request at the URL '/hello'
 @app.route('/hello', methods=['POST'])
